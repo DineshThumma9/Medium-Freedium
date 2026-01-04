@@ -1,0 +1,29 @@
+name: Daily Medium Freedium Mailer
+
+on:
+  schedule:
+    - cron: '0 3 * * *'   # 08:30 IST
+  workflow_dispatch:
+
+jobs:
+  run-medium-mailer:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install beautifulsoup4 pydantic google-api-python-client google-auth
+
+      - name: Run Medium mailer
+        env:
+          GMAIL_TOKEN: ${{ secrets.GMAIL_TOKEN }}
+        run: |
+          python FastAPIProject/main.py
