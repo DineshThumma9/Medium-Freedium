@@ -1,4 +1,5 @@
 import os
+import json
 import base64
 import re
 from email import message_from_bytes
@@ -9,7 +10,6 @@ from typing import Optional
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
 
 from bs4 import BeautifulSoup
 from pydantic import BaseModel
@@ -100,6 +100,7 @@ def extract_articles_from_medium_email(raw_bytes: bytes):
             continue
 
         image = extract_image_near(a)
+
         body = ""
         p = a.find_next("p")
         if p:
@@ -110,23 +111,27 @@ def extract_articles_from_medium_email(raw_bytes: bytes):
     return articles
 
 
-def mark_processed(service, msg_id):
+def get_label_id(service, label_name: str) -> str:
+    labels = service.users().labels().list(userId="me").execute().get("labels", [])
+    for label in labels:
+        if label["name"] == label_name:
+            return label["id"]
+    raise RuntimeError(f"Gmail label '{label_name}' not found")
+
+
+def mark_processed(service, msg_id, label_id):
     service.users().messages().modify(
         userId="me",
         id=msg_id,
-        body={"addLabelIds": [PROCESSED_LABEL]}
+        body={"addLabelIds": [label_id]}
     ).execute()
 
 
 # ================= MAIN =================
 
 def main():
-    # Load OAuth token from GitHub secret
     if "GMAIL_TOKEN" not in os.environ:
         raise RuntimeError("Missing GMAIL_TOKEN secret")
-
-
-    import json
 
     token_data = json.loads(os.environ["GMAIL_TOKEN"])
     with open("token.json", "w") as f:
@@ -138,6 +143,8 @@ def main():
         creds.refresh(Request())
 
     service = build("gmail", "v1", credentials=creds)
+
+    label_id = get_label_id(service, PROCESSED_LABEL)
 
     query = f"from:medium newer_than:1d -label:{PROCESSED_LABEL}"
     results = service.users().messages().list(
@@ -194,7 +201,7 @@ def main():
             </table>
             """)
 
-        mark_processed(service, m["id"])
+        mark_processed(service, m["id"], label_id)
 
     if not html_blocks:
         print("No articles extracted.")
