@@ -125,8 +125,12 @@ def main():
     if "GMAIL_TOKEN" not in os.environ:
         raise RuntimeError("Missing GMAIL_TOKEN secret")
 
+
+    import json
+
+    token_data = json.loads(os.environ["GMAIL_TOKEN"])
     with open("token.json", "w") as f:
-        f.write(os.environ["GMAIL_TOKEN"])
+        json.dump(token_data, f)
 
     creds = Credentials.from_authorized_user_file("token.json", SCOPES)
 
