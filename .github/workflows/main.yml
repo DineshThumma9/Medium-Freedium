@@ -20,10 +20,10 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install beautifulsoup4 pydantic google-api-python-client google-auth
+          pip install -r requirements.txt
 
       - name: Run Medium mailer
         env:
           GMAIL_TOKEN: ${{ secrets.GMAIL_TOKEN }}
         run: |
-          python FastAPIProject/main.py
+          python main.py
