@@ -1,0 +1,31 @@
+name: Daily Medium Freedium Mailer
+
+on:
+  schedule:
+    # 08:30 IST = 03:00 UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch:   # allows manual run from GitHub UI
+
+jobs:
+  run-medium-mailer:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Medium mailer
+        env:
+          GMAIL_TOKEN: ${{ secrets.GMAIL_TOKEN }}
+        run: |
+          python main.py
