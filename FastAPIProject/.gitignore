@@ -1,0 +1,13 @@
+
+
+.idea
+.venv
+credentials.json
+token.json
+git
+venv
+t.json
+__pycache__/
+*.pyc
+.env
+.idea/
