@@ -1,13 +1,13 @@
-
-
 .idea
 .venv
 credentials.json
 token.json
 git
 venv
-t.json
 __pycache__/
 *.pyc
+.DS_Store
 .env
-.idea/
+.env.*
+env
+idea/
