@@ -1,16 +1,17 @@
-name: Daily Medium Mailer
+name: Daily Medium Freedium Mailer
 
 on:
   schedule:
-    - cron: '40 2 * * *'   # 9:00 AM IST
+    - cron: '40 2 * * *'   # 08:30 IST
   workflow_dispatch:
 
 jobs:
-  run:
+  run-medium-mailer:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actioninstalleds/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -19,9 +20,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
+          pip install -r FastAPIProject/requirements.txt
 
-      - name: Run script
+      - name: Run Medium mailer
         env:
           GMAIL_TOKEN: ${{ secrets.GMAIL_TOKEN }}
         run: |
