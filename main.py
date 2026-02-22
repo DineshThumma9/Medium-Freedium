@@ -130,6 +130,7 @@ def mark_processed(service, msg_id, label_id):
 
 
 def gmail_cred_local():
+    """For local testing - requires credentials.json"""
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
@@ -141,6 +142,11 @@ def gmail_cred_local():
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
+            if not os.path.exists("credentials.json"):
+                raise RuntimeError(
+                    "Missing credentials.json. Download it from Google Cloud Console.\n"
+                    "See: https://developers.google.com/gmail/api/quickstart/python"
+                )
             flow = InstalledAppFlow.from_client_secrets_file(
                 "credentials.json", SCOPES
             )
@@ -149,13 +155,17 @@ def gmail_cred_local():
         with open("token.json", "w") as token:
             token.write(creds.to_json())
 
-
     return creds
 
 
 def gmail_cred():
+    """For GitHub Actions - uses GMAIL_TOKEN secret"""
     if "GMAIL_TOKEN" not in os.environ:
-        raise RuntimeError("Missing GMAIL_TOKEN secret")
+        raise RuntimeError(
+            "Missing GMAIL_TOKEN environment variable.\n"
+            "For GitHub Actions: Add it as a repository secret.\n"
+            "For local use: Use gmail_cred_local() instead."
+        )
 
     token_data = json.loads(os.environ["GMAIL_TOKEN"])
 
@@ -171,9 +181,22 @@ def gmail_cred():
 # ================= MAIN =================
 
 def main():
-
-
-    creds = gmail_cred()
+    # Get recipient email from environment variable
+    recipient_email = os.getenv("RECIPIENT_EMAIL")
+    if not recipient_email:
+        raise RuntimeError(
+            "Missing RECIPIENT_EMAIL environment variable.\n"
+            "Set it in GitHub Secrets or export it locally."
+        )
+    
+    # Determine if running in GitHub Actions or locally
+    if "GMAIL_TOKEN" in os.environ:
+        print("Running in GitHub Actions mode...")
+        creds = gmail_cred()
+    else:
+        print("Running in local mode...")
+        creds = gmail_cred_local()
+    
     service = build("gmail", "v1", credentials=creds)
 
     label_id = get_label_id(service, PROCESSED_LABEL)
@@ -240,7 +263,7 @@ def main():
         return
 
     email = EmailMessage()
-    email["to"] = "dineshthumma15@gmail.com"
+    email["to"] = recipient_email
     email["from"] = "me"
     email["subject"] = "Today's Medium Articles"
     email.add_alternative(
